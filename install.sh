@@ -9,7 +9,7 @@ source_dir="$(pwd)/$(dirname $0)/src"
 chmod 755 "$source_dir"/*
 
 echo -n "Copying into '$install_dir'... "
-cp -p "$source_dir"/* "$install_dir" # 2>/dev/null
+cp -p "$source_dir"/* "$install_dir" 2>/dev/null
 if [ $? = 0 ]
 then
 	echo "done."
