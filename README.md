@@ -47,8 +47,9 @@ Isn't it neat?
 - `genalias2` - interactive mode, generate shell aliases from ALS
 - `genalias2 <filename>` - generate shell aliases from an ALS file
 - `genalias2 [filename] <pattern>` - generate using a desired pattern; if filename is empty, stdin is used
-- `asect` - list all sections (in separate lines), use `echo $(asect)` or similar to join them.
-- `asect <section>` - display the current configuration for a given section
+- `asect` - list all sections (in separate lines) with their patterns
+- `asect -p` - list all sections (in separate lines) **without** patterns
+- `asect <section>` - display the current pattern for a given section
 - `asect <section> <pattern>` - create a new section or override an existing section, applying the given pattern
 - `asect <section> -d` - delete a section and all of its rules
 - `asect <section> -c` - remove all rules from a section
