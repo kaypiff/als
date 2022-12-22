@@ -16,7 +16,7 @@ then
 
 	echo "Installation done. You might want to enable ALS by running the following command:"
 	echo '    # Replace .bashrc with your shell file'
-	echo '    echo "source ~/.local/share/als/output.sh" >> ~/.bashrc'
+	echo '    echo "source \"\$HOME/.local/share/als/output.sh\"" >> ~/.bashrc'
 	echo '    aa !'
 	echo ''
 else
