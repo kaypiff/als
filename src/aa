@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# aa - quickly add aliases using ALS
+#
+
+section="$1"
+rule="$2"
+
+# Use $ALS_DATA_DIR as the directory. If that's not set, default to ~/.local/share/als
+dir="${ALS_DATA_DIR:-$HOME/.local/share/als}"
+
+# Create the directory if it doesn't exist
+mkdir -p "$dir"/sections
+
+# The section file
+sect_file="$dir/sections/$section.als"
+
+# Default input/output files
+inp_file="$dir/main.als"
+out_file="$dir/output.sh"
+
+# Create the input file if it doesn't exist
+touch "$inp_file"
+
+# If no args provided, print all aliases
+# found on the system and exit.
+[ $# = 0 ] && genalias2 "$inp_file" '$< -> $$' && exit 0
+
+if [ ! "$section" = '!' ] ; then
+
+	# If the section file doesn't exist, exit with an error.
+	[ ! -f "$sect_file" ] && echo "error: invalid section: '$section'!" && exit 1
+
+	# If no rule provided, print all aliases
+	# belonging to the given section and exit.
+	[ ! "$rule" ] && genalias2 "$sect_file" '$< -> $$' && exit 0
+
+	# Avoid duplicate aliases by unaliasing the rule first.
+	ua $(echo "$rule" | sed 's/\s*->.*//g') > /dev/null
+
+	# Add the rule to the file.
+	echo "$rule" >> "$sect_file"
+
+	echo "Alias added. Restart your shell for the new ruleset to load."
+fi
+
+# Regenerate aliases
+genalias2 "$inp_file" > "$out_file"

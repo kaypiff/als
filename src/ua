@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# ua - quickly unalias ALS rules
+#
+
+# The first argument is the rule name
+rule="$1"
+
+# Use $ALS_DATA_DIR as the directory. If that's not set, default to ~/.local/share/als
+dir="${ALS_DATA_DIR:-$HOME/.local/share/als}"
+
+# Create the directory if it doesn't exist
+mkdir -p "$dir"/sections
+
+# Default input/output files
+inp_file="$dir/main.als"
+out_file="$dir/output.sh"
+
+# Create the input file if it doesn't exist
+touch "$inp_file"
+
+# This generates a sed command like 'sed -e "11d" "file.als"' that deletes the 11th line from the file
+# The line number and the filename come from grep which looks for the rule in all sections files and returns the match.
+cmd=$(grep -n --color=never "^\s*$rule\s\+->" "$dir"/sections/*.als | sed -E 's/(.*):(.*):.*/echo "\$\(sed -e \"\2d\" \"\1\" || cat \"\1\"\)" > "\1"/')
+
+# If cmd is empty, it means grep wasn't able to find the rule.
+[ ! "$cmd" ] && echo "error: no such rule!" && exit 1
+
+# This is safe because the command is strictly controlled.
+# Most of $cmd is hardcoded and the rest comes from the output of grep.
+# We don't run any user input here - $cmd is only filled
+# with a filename and line number from grep.
+# It's in the format: 'sed "<line>d" "<file>"'.
+echo $cmd | sh
+
+# Regenerate the aliases
+genalias2 "$inp_file" > "$out_file"
+
+echo "Alias removed. Restart your shell for the new ruleset to load."
+
+exit 0
