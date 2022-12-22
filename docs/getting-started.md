@@ -32,7 +32,7 @@
 ## Installation
 
 ### Dependencies
-ALS depends only on core utilities. These should be already installed on most Linux distributions.
+ALS depends mostly on core utilities. These should be already installed on most Linux distributions.
 
 You **must** also have `sed` and `grep` installed on your systems but these are useful outside of ALS and you should have them anyway.
 
@@ -43,6 +43,7 @@ The installation script by default installs the scripts into `/usr/bin`. Invoke 
 
 ```sh
 git clone https://github.com/kaypiff/als
+cd als
 sudo ./install.sh
 ```
 
@@ -53,6 +54,7 @@ You can change the install directory by passing an argument to the script:
 ```
 
 This may be used to avoid needing root privileges for the installation.
+
 **Important:** Make sure the chosen directory is in your PATH or you won't be able to use the scripts.
 
 ### Enable
