@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# asect - easily manage ALS sections
+#
+
+section="$1"
+pattern="$2"
+
+# Use $ALS_DATA_DIR as the directory. If that's not set, default to ~/.local/share/als
+dir="${ALS_DATA_DIR:-$HOME/.local/share/als}"
+
+# Create the directory if it doesn't exist
+mkdir -p "$dir"/sections
+
+# The section file
+sect_file="$dir/sections/$section.als"
+
+# Default input file
+inp_file="$dir/main.als"
+
+# Create the input file if it doesn't exist already
+touch "$inp_file"
+
+list_sections() {
+	# List the sections in the format <name> '<pattern>'
+	sed -Ene "s/sections\/(.*)\.als\s*-->\s*(.*)\s*\$/\1 '\2'/p" "$1"
+}
+
+list_sections_without_patterns() {
+	# List the sections in the format <name>
+	sed -Ene "s/sections\/(.*)\.als\s*-->\s*.*\$/\1/p" "$1"
+}
+
+view_section_pattern() {
+	# Get the individual section pattern and print it.
+	res=$(grep --color=never "sections/$section.als\s" "$inp_file" | sed -Ee "s/sections\/.*.als\s*-->\s*(.*)\s*\$/\1/")
+	[ ! "$res" ] && echo "error: no such section!" >> /dev/stderr && exit 1
+	echo "$res"
+}
+
+delete_section() {
+	[ ! -f "$sect_file" ] && echo "error: no such section!" >> /dev/stderr && exit 1
+	# Delete the section file to get rid of the rules
+	rm -f "$sect_file"
+	# Remove it from the main file
+	sed -i "/sections\/$section\.als.*/d" "$inp_file"
+	# Rebuild aliases to remove this section from the shell
+	aa !
+}
+
+clear_section() {
+	[ ! -f "$sect_file" ] && echo "error: no such section!" >> /dev/stderr && exit 1
+	# Empty the section file - this removes all rules
+	echo -n '' > "$sect_file"
+	# Rebuild aliases to remove the rules from the shell
+	aa !
+}
+
+modify_section() {
+	touch "$sect_file"
+	# The current line number where this section is registered in the main file
+	linenumber=$(grep -n --color=never "sections/$section\.als" "$inp_file" | sed "s/:.*//g")
+
+	# If the section is already registered, remove it
+	[ "$linenumber" ] && sed -i "${linenumber}d" "$inp_file"
+	# Add the section at the end of the file
+	echo "sections/$section.als --> $pattern" >> "$inp_file"
+}
+
+case $# in
+	0)
+		list_sections "$inp_file" ;;
+	1)
+		case "$section" in
+			'-p') list_sections_without_patterns "$inp_file" ;;
+			*   ) view_section_pattern ;;
+		esac
+		;;
+	2)
+		case "$pattern" in
+			'-d') delete_section ;;
+			'-c') clear_section  ;;
+			*   ) modify_section ;;
+		esac
+		;;
+	*)
+		echo "error: too many arguments!" >> /dev/stderr
+		exit 1
+		;;
+esac

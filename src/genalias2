@@ -1,0 +1,86 @@
+#!/bin/sh
+
+# A sed command used for escaping input
+escape_sed='s/[^a-zA-Z0-9,._\+ \-]/\\&/g; 1!s/^/"/; $!s/$/"/'
+
+# A function for generating ALS files
+gen_file() {
+	# The global pattern
+	local template="$2"
+	# If no file provided, use stdin
+	local file=${1:-"-"}
+	# The current directory
+	local cwd=`pwd`
+
+	# Go to the directory of the affected file.
+	# This allows you to use relative paths inside ALS files.
+	cd "$(dirname "$file")"
+
+	# Remove comments and empty lines from the input
+	local input=$(sed "s/\s*#.*//g;/^&/d;" "$(basename "$file")")
+
+	# Look for 'long arrows' in the file - transformations
+	echo "$input" | grep "\s-->\s" |
+	while read -r line
+	do
+		# Filename
+		local one=$(echo "$line" | sed "s/\s*-->.*//")
+		# Pattern
+		local two=$(echo "$line" | sed "s/.*-->\s*//;$escape_sed")
+		# Apply the current global pattern to the transformation pattern (for recursive patterns)
+		local pat=$(echo "$template" | sed "s/\\\$\\\$/$two/g")
+
+		# Generate the file with the new pattern as the global pattern
+		gen_file "$one" "$pat"
+	done
+
+	# Look for 'short arrows' - rules
+	echo "$input" | grep "\s->\s" |
+	while read -r line
+	do
+		# Short name
+		local one=$(echo "$line" | sed "s/\s*->.*//;$escape_sed")
+		# Long name
+		local two=$(echo "$line" | sed "s/.*->\s*//;$escape_sed")
+
+		# Format the rule according to the global pattern and print the result.
+		echo "$template" | sed "s/\\\$\\\$/$two/g;s/\\\$</$one/g"
+	done
+
+	# Return to the previous directory
+	cd "$cwd"
+
+	return 0;
+}
+
+# Input file
+src="$1"
+# The global pattern. If not supplied,
+# use 'alias "$<=$$"'
+pat="${2:-"alias \"\$<=\$\$\""}"
+
+# If a file is provided but does not exist,
+# exit with an error message.
+[ "$src" -a ! -f "$src" ] && echo "error: '$src' is not a file!" && exit 1
+
+# If a file is provided but no global pattern is supplied,
+# prepend a header to the output.
+if [ "$1" -a ! "$2" ] ; then
+	echo "#!/bin/sh"
+	echo "#"
+	echo "# ======================================="
+	echo "#         Generated with genalias        "
+	echo "#             (c)2022 kaypiff            "
+	echo "#      https://github.com/kaypiff/als    "
+	echo "#"
+	echo "#  Genalias is licensed under the terms  "
+	echo "#  of the GNU General Public License 3   "
+	echo "#  or any later version. See LICENSE     "
+	echo "#  for details.                          "
+	echo "# ======================================="
+	echo "#"
+	echo ""
+fi
+
+# Generate the file
+gen_file "$src" "$pat"
